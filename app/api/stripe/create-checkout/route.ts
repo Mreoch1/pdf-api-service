@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 const PRICE_IDS = {
-  pro: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
-  enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise',
+  pro: process.env.STRIPE_PRO_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro',
+  enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise',
 }
 
 export async function POST(request: NextRequest) {
