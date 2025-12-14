@@ -51,17 +51,43 @@ describe('/api/pdf/generate', () => {
     validateApiKey.mockResolvedValue({ valid: true, userId: 'test-user-id' })
     generatePDF.mockResolvedValue(Buffer.from('fake-pdf-content'))
     
-    const mockSupabase = {
-      from: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn()
-        .mockResolvedValueOnce({ data: { id: 'key-id' }, error: null }) // API key lookup
-        .mockResolvedValueOnce({ data: { free_tier_used: 0, free_tier_reset_at: new Date(Date.now() + 86400000).toISOString() }, error: null }), // User metadata
-      update: jest.fn().mockResolvedValue({ error: null }),
-      insert: jest.fn().mockResolvedValue({ error: null }),
-      rpc: jest.fn().mockResolvedValue({ error: null }),
+    // Create a chainable mock for Supabase queries
+    const createChainableMock = () => {
+      const mock = {
+        from: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        insert: jest.fn().mockReturnThis(),
+        rpc: jest.fn(),
+      }
+      return mock
     }
+
+    const mockSupabase = createChainableMock()
+    
+    // Mock the single() calls with proper sequencing
+    mockSupabase.single = jest.fn()
+      .mockResolvedValueOnce({ 
+        data: { id: 'key-id' }, 
+        error: null 
+      })
+      .mockResolvedValueOnce({ 
+        data: { 
+          free_tier_used: 0, 
+          free_tier_reset_at: new Date(Date.now() + 86400000).toISOString() 
+        }, 
+        error: null 
+      })
+      .mockResolvedValueOnce({ 
+        data: null, 
+        error: { code: 'PGRST116' } // No subscription found
+      })
+
+    // Mock update and insert to return chainable
+    mockSupabase.update.mockResolvedValue({ error: null })
+    mockSupabase.insert.mockResolvedValue({ error: null })
+    mockSupabase.rpc.mockResolvedValue({ error: null })
 
     createServiceClient.mockResolvedValue(mockSupabase)
 
